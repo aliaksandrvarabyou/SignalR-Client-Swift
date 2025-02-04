@@ -24,8 +24,19 @@ public class WebsocketsTransport: NSObject, Transport, URLSessionWebSocketDelega
         self.logger = logger
     }
 
+    var t = Date().timeIntervalSince1970
+    var timer: Timer?
+    
     public func start(url: URL, options: HttpConnectionOptions) {
         logger.log(logLevel: .info, message: "Starting WebSocket transport")
+        
+        t = Date().timeIntervalSince1970
+        timer?.invalidate()
+        timer = Timer.scheduledTimer(timeInterval: 20,
+                                     target: self,
+                                     selector: #selector(timerAction),
+                                     userInfo: nil,
+                                     repeats: false)
 
         var request = URLRequest(url: convertUrl(url: url))
         populateHeaders(headers: options.headers, request: &request)
@@ -34,6 +45,14 @@ public class WebsocketsTransport: NSObject, Transport, URLSessionWebSocketDelega
         webSocketTask = urlSession!.webSocketTask(with: request)
         
         webSocketTask!.resume()
+    }
+    
+    @objc private func timerAction() {
+        DispatchQueue.main.async {
+            NotificationCenter.default.post(Notification(name: NSNotification.Name("WebsocketsTransport.timerAction"),
+                                                         object: nil,
+                                                         userInfo: nil))
+        }
     }
 
     public func send(data: Data, sendDidComplete: @escaping (Error?) -> Void) {
@@ -49,6 +68,16 @@ public class WebsocketsTransport: NSObject, Transport, URLSessionWebSocketDelega
     public func urlSession(_ session: URLSession, webSocketTask: URLSessionWebSocketTask, didOpenWithProtocol protocol: String?) {
         logger.log(logLevel: .info, message: "WebSocket open")
         delegate?.transportDidOpen()
+        timer?.invalidate()
+        timer = nil
+        let delay = Date().timeIntervalSince1970 - t
+        if delay > 4 {
+            DispatchQueue.main.async {
+                NotificationCenter.default.post(Notification(name: NSNotification.Name("WebsocketsTransport.urlSession"),
+                                                             object: nil,
+                                                             userInfo: ["delay" : delay]))
+            }
+        }
         readMessage()
     }
 
@@ -92,6 +121,9 @@ public class WebsocketsTransport: NSObject, Transport, URLSessionWebSocketDelega
     }
 
     public func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
+        timer?.invalidate()
+        timer = nil
+        
         guard error != nil else {
             // As per docs: "Error may be nil, which implies that no error occurred and this task is complete."
             return
@@ -109,6 +141,9 @@ public class WebsocketsTransport: NSObject, Transport, URLSessionWebSocketDelega
     }
 
     public func urlSession(_ session: URLSession, webSocketTask: URLSessionWebSocketTask, didCloseWith closeCode: URLSessionWebSocketTask.CloseCode, reason: Data?) {
+        timer?.invalidate()
+        timer = nil
+        
         var reasonString = ""
         if let reason = reason {
             reasonString = String(decoding: reason, as: UTF8.self)
