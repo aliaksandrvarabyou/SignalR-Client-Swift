@@ -314,7 +314,7 @@ public class HubConnection {
     }
 
     fileprivate func connectionDidReceiveData(data: Data) {
-        logger.log(logLevel: .debug, message: "Data received")
+//        logger.log(logLevel: .debug, message: "Data received")
 
         var data = data
         if !handshakeStatus.isHandled {
@@ -455,7 +455,7 @@ public class HubConnection {
         }
 
         guard let keepAliveInterval = keepAliveIntervalInSeconds else {
-            logger.log(logLevel: .debug, message: "Not scheduling sending keep alive - keep alive disabled")
+//            logger.log(logLevel: .debug, message: "Not scheduling sending keep alive - keep alive disabled")
             return
         }
 

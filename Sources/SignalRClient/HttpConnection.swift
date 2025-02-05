@@ -247,7 +247,7 @@ public class HttpConnection: Connection {
     }
 
     fileprivate func transportDidReceiveData(_ data: Data) {
-        logger.log(logLevel: .debug, message: "Received data from transport")
+//        logger.log(logLevel: .debug, message: "Received data from transport")
         Util.dispatchToMainThread {
             self.delegate?.connectionDidReceiveData(connection: self, data: data)
         }
