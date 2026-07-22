@@ -47,8 +47,12 @@ class DefaultHttpClient: HttpClientProtocol {
         session.dataTask(with: urlRequest, completionHandler: { (data, response, error) in
 
             var resp:HttpResponse?
-            if error == nil {
-                resp = HttpResponse(statusCode: (response as! HTTPURLResponse).statusCode, contents: data)
+            if error == nil,
+               let httpResponse = response as? HTTPURLResponse
+            {
+                resp = HttpResponse(statusCode: httpResponse.statusCode,
+                                    headers: httpResponse.allHeaderFields,
+                                    contents: data)
             }
 
             completionHandler(resp, error)

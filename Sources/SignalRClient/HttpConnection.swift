@@ -122,6 +122,9 @@ public class HttpConnection: Connection {
                         self.negotiate(negotiateUrl: negotiateUrl, accessToken: redirection.accessToken, negotiateDidComplete: negotiateDidComplete)
                     case let negotiationResponse as NegotiationResponse:
                         self.logger.log(logLevel: .debug, message: "Negotiation response received")
+                        if let setCookie = httpResponse.headers["Set-Cookie"] as? String {
+                            self.options.headers["Set-Cookie"] = setCookie
+                        }
                         negotiateDidComplete(negotiationResponse)
                     default:
                         throw SignalRError.invalidNegotiationResponse(message: "internal error - unexpected negotiation payload")
